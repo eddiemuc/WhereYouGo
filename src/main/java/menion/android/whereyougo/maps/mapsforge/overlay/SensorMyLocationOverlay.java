@@ -1,15 +1,15 @@
 /*
  * Copyright 2010, 2011, 2012 mapsforge.org
  * Copyright 2013, 2014 biylda <biylda@gmail.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify it under the terms of the
  * GNU Lesser General Public License as published by the Free Software Foundation, either version 3
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License along with this program.
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -25,7 +25,7 @@ import android.hardware.SensorManager;
 import android.view.Surface;
 import android.view.WindowManager;
 
-import org.mapsforge.android.maps.MapView;
+import org.mapsforge.map.android.view.MapView;
 
 public class SensorMyLocationOverlay extends MyLocationOverlay implements SensorEventListener {
 
@@ -70,19 +70,19 @@ public class SensorMyLocationOverlay extends MyLocationOverlay implements Sensor
      * @param circleStroke the {@code Paint} used to stroke the circle that represents the current
      *                     location (might be null).
      */
-    public SensorMyLocationOverlay(Context context, MapView mapView, RotationMarker marker,
-                                   Paint circleFill, Paint circleStroke) {
-        super(context, mapView, marker, circleFill, circleStroke);
-        this.windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        this.sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
-        this.marker = marker;
-        this.mapView = mapView;
-    }
+//    public SensorMyLocationOverlay(Context context, MapView mapView, RotationMarker marker,
+//                                   Paint circleFill, Paint circleStroke) {
+//        super(context, mapView, marker, circleFill, circleStroke);
+//        this.windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+//        this.sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+//        this.marker = marker;
+//        this.mapView = mapView;
+//    }
 
   /*
    * @Override public synchronized void draw(BoundingBox boundingBox, byte zoomLevel, Canvas canvas)
    * { if (!isMyLocationEnabled()) { return; }
-   * 
+   *
    * super.draw(boundingBox, zoomLevel, canvas); double canvasPixelLeft =
    * MercatorProjection.longitudeToPixelX( boundingBox.minLongitude, zoomLevel); double
    * canvasPixelTop = MercatorProjection.latitudeToPixelY( boundingBox.maxLatitude, zoomLevel);
@@ -182,7 +182,7 @@ public class SensorMyLocationOverlay extends MyLocationOverlay implements Sensor
                 }
             }
             if (redraw)
-                this.mapView.getOverlayController().redrawOverlays();
+                this.mapView.getLayerManager().redrawLayers();
         }
     }
 

@@ -1,15 +1,15 @@
 /*
  * Copyright 2010, 2011, 2012 mapsforge.org
  * Copyright 2013, 2014 biylda <biylda@gmail.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify it under the terms of the
  * GNU Lesser General Public License as published by the Free Software Foundation, either version 3
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License along with this program.
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -17,10 +17,8 @@
 package menion.android.whereyougo.maps.mapsforge.overlay;
 
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Paint.Style;
+
+
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -28,16 +26,21 @@ import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.Bundle;
 
-import org.mapsforge.android.maps.MapView;
-import org.mapsforge.android.maps.overlay.Circle;
-import org.mapsforge.android.maps.overlay.Marker;
-import org.mapsforge.android.maps.overlay.Overlay;
+import org.mapsforge.core.graphics.Canvas;
+import org.mapsforge.core.graphics.Color;
+import org.mapsforge.core.graphics.Paint;
+import org.mapsforge.core.graphics.Style;
 import org.mapsforge.core.model.BoundingBox;
-import org.mapsforge.core.model.GeoPoint;
+import org.mapsforge.core.model.LatLong;
 import org.mapsforge.core.model.Point;
 import org.mapsforge.core.util.MercatorProjection;
+import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
+import org.mapsforge.map.android.view.MapView;
+import org.mapsforge.map.layer.Layer;
+import org.mapsforge.map.layer.overlay.Circle;
+import org.mapsforge.map.layer.overlay.Marker;
 
-public class MyLocationOverlay implements LocationListener, Overlay {
+public class MyLocationOverlay extends Layer implements LocationListener {
 
     private static final int UPDATE_DISTANCE = 0;
     private static final int UPDATE_INTERVAL = 1000;
@@ -91,11 +94,11 @@ public class MyLocationOverlay implements LocationListener, Overlay {
         return paint;
     }
 
-    private static Paint getPaint(Style style, int color, int alpha) {
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private static Paint getPaint(Style style, Color color, int alpha) {
+        Paint paint = AndroidGraphicFactory.INSTANCE.createPaint();
         paint.setStyle(style);
         paint.setColor(color);
-        paint.setAlpha(alpha);
+        AndroidGraphicFactory.INSTANCE.getPaint(paint).setAlpha(alpha);
         return paint;
     }
 
@@ -103,14 +106,8 @@ public class MyLocationOverlay implements LocationListener, Overlay {
      * @param location the location whose geographical coordinates should be converted.
      * @return a new GeoPoint with the geographical coordinates taken from the given location.
      */
-    public static GeoPoint locationToGeoPoint(Location location) {
-        return new GeoPoint(location.getLatitude(), location.getLongitude());
-    }
-
-    @Override
-    public int compareTo(Overlay o) {
-        // TODO Auto-generated method stub
-        return 0;
+    public static LatLong locationToGeoPoint(Location location) {
+        return new LatLong(location.getLatitude(), location.getLongitude());
     }
 
     /**
@@ -121,12 +118,12 @@ public class MyLocationOverlay implements LocationListener, Overlay {
         if (this.myLocationEnabled) {
             this.myLocationEnabled = false;
             this.locationManager.removeUpdates(this);
-            this.mapView.getOverlayController().redrawOverlays();
+            this.mapView.getLayerManager().redrawLayers();
         }
     }
 
     @Override
-    public synchronized void draw(BoundingBox boundingBox, byte zoomLevel, Canvas canvas) {
+    public synchronized void draw(BoundingBox boundingBox, byte zoomLevel, Canvas canvas, Point topLeft) {
         if (!this.myLocationEnabled) {
             return;
         }
@@ -178,9 +175,9 @@ public class MyLocationOverlay implements LocationListener, Overlay {
         return this.lastLocation;
     }
 
-    public synchronized boolean checkItemHit(GeoPoint geoPoint, MapView mapView) {
-        return false;
-    }
+ //   public synchronized boolean checkItemHit(GeoPoint geoPoint, MapView mapView) {
+//        return false;
+//    }
 
     /**
      * @return true if the map will be centered at the next received location fix, false otherwise.
@@ -216,17 +213,17 @@ public class MyLocationOverlay implements LocationListener, Overlay {
             this.lastLocation = location;
             // this.bearing = location.getBearing();
 
-            GeoPoint geoPoint = locationToGeoPoint(location);
-            this.marker.setGeoPoint(geoPoint);
-            this.circle.setGeoPoint(geoPoint);
+            LatLong geoPoint = locationToGeoPoint(location);
+            this.marker.setLatLong(geoPoint);
+            this.circle.setLatLong(geoPoint);
             this.circle.setRadius(location.getAccuracy());
 
             if (this.centerAtNextFix || this.snapToLocationEnabled) {
                 this.centerAtNextFix = false;
-                this.mapView.getMapViewPosition().setCenter(geoPoint);
+                this.mapView.setCenter(geoPoint);
             }
         }
-        this.mapView.getOverlayController().redrawOverlays();
+        this.mapView.getLayerManager().redrawLayers();
     }
 
     @Override
@@ -244,6 +241,4 @@ public class MyLocationOverlay implements LocationListener, Overlay {
         // do nothing
     }
 
-    public void onTap(GeoPoint p) {
-    }
-}
+ }

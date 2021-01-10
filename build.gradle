@@ -107,9 +107,19 @@ dependencies {
     // File select dialog
     implementation 'com.github.jfmdev:aFileDialog:v1.0.6'
 
-    //
-    implementation 'com.github.jspricke.mapsforge-map-whereyougo:mapsforge-map:75d7c20'
+    // Mapsforge new version
+    def mapsforgeVersion = '0.14.0'
+    implementation "org.mapsforge:mapsforge-core:$mapsforgeVersion"
+    implementation "org.mapsforge:mapsforge-map:$mapsforgeVersion"
+    implementation "org.mapsforge:mapsforge-map-android:$mapsforgeVersion"
+    implementation "org.mapsforge:mapsforge-map-reader:$mapsforgeVersion"
+    implementation "org.mapsforge:mapsforge-themes:$mapsforgeVersion"
+    configurations {
+        all*.exclude group: 'net.sf.kxml', module: 'kxml2' // duplicate XmlPullParser class
+    }
 
+    // used by mapsforge
+    implementation 'com.caverock:androidsvg:1.4'
     // barcode scanner
     // v4.x: Minimum SDK version 24, downgradable to 14 by using zxing:core 3.3.0, uses androidx
     implementation 'com.journeyapps:zxing-android-embedded:4.1.0'

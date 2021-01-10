@@ -1,15 +1,15 @@
 /*
  * Copyright 2010, 2011, 2012 mapsforge.org
  * Copyright 2013, 2014 biylda <biylda@gmail.com>
- * 
+ *
  * This program is free software: you can redistribute it and/or modify it under the terms of the
  * GNU Lesser General Public License as published by the Free Software Foundation, either version 3
  * of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public License along with this program.
  * If not, see <http://www.gnu.org/licenses/>.
  */
@@ -26,8 +26,9 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
+
+
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -51,26 +52,36 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import org.mapsforge.android.AndroidUtils;
+import org.mapsforge.map.android.util.AndroidUtil
 import org.mapsforge.android.maps.DebugSettings;
 import org.mapsforge.android.maps.MapActivity;
-import org.mapsforge.android.maps.MapScaleBar;
-import org.mapsforge.android.maps.MapScaleBar.TextField;
 import org.mapsforge.android.maps.MapViewPosition;
 import org.mapsforge.android.maps.mapgenerator.MapGenerator;
 import org.mapsforge.android.maps.mapgenerator.TileCache;
 import org.mapsforge.android.maps.mapgenerator.tiledownloader.TileDownloader;
-import org.mapsforge.android.maps.overlay.Circle;
-import org.mapsforge.android.maps.overlay.Marker;
+
 import org.mapsforge.android.maps.overlay.OverlayItem;
-import org.mapsforge.android.maps.overlay.PolygonalChain;
-import org.mapsforge.android.maps.overlay.Polyline;
+
+
+import org.mapsforge.core.graphics.Paint;
+import org.mapsforge.core.graphics.Style;
+import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
+import org.mapsforge.map.layer.Layer;
+import org.mapsforge.map.layer.overlay.Circle;
+import org.mapsforge.map.layer.overlay.Marker;
+import org.mapsforge.map.layer.overlay.Polygon
 import org.mapsforge.core.model.BoundingBox;
-import org.mapsforge.core.model.GeoPoint;
+import org.mapsforge.core.model.LatLong;
 import org.mapsforge.core.model.MapPosition;
+import org.mapsforge.map.android.view.MapView;
+import org.mapsforge.map.layer.overlay.Polyline;
 import org.mapsforge.map.reader.header.FileOpenResult;
 import org.mapsforge.map.reader.header.MapFileInfo;
 import org.mapsforge.map.rendertheme.InternalRenderTheme;
+import org.mapsforge.map.scalebar.DistanceUnitAdapter;
+import org.mapsforge.map.scalebar.ImperialUnitAdapter;
+import org.mapsforge.map.scalebar.MapScaleBar;
+import org.mapsforge.map.scalebar.MetricUnitAdapter;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -84,6 +95,7 @@ import menion.android.whereyougo.MainApplication;
 import menion.android.whereyougo.R;
 import menion.android.whereyougo.gui.IRefreshable;
 import menion.android.whereyougo.gui.activity.MainActivity;
+import menion.android.whereyougo.gui.extension.activity.CustomActivity;
 import menion.android.whereyougo.maps.container.MapPoint;
 import menion.android.whereyougo.maps.container.MapPointPack;
 import menion.android.whereyougo.maps.mapsforge.filefilter.FilterByFileExtension;
@@ -112,7 +124,7 @@ import menion.android.whereyougo.utils.UtilsFormat;
  * preferences can be adjusted via the {@link EditPreferences} activity and screenshots of the map
  * may be taken in different image formats.
  */
-public class MapsforgeActivity extends MapActivity implements IRefreshable {
+public class MapsforgeActivity extends CustomActivity implements IRefreshable {
     /**
      * The default number of tiles in the file system cache. (229 = 30 MB)
      */
@@ -156,7 +168,7 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
     private static final int SELECT_MAP_FILE = 0;
     private static final int SELECT_RENDER_THEME_FILE = 1;
     private final Object lock = new Object();
-    MyMapView mapView;
+    MapView mapView;
     private MapGeneratorInternal mapGeneratorInternal = MapGeneratorInternal.BLANK;
     private PointListOverlay listOverlay;
     private MyLocationOverlay myLocationOverlay;
@@ -177,7 +189,7 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
             // final MapPoint p = pointOverlay.getPoint();
             //MapsforgeActivity.this.navigationOverlay.setTarget(pointOverlay.getGeoPoint());
             TextView textView = (TextView) View.inflate(MapsforgeActivity.this, R.layout.point_detail_view, null);
-            textView.setText(UtilsFormat.formatGeoPoint(pointOverlay.getGeoPoint()) + "\n\n"
+            textView.setText(UtilsFormat.formatGeoPoint(pointOverlay.getLatLong()) + "\n\n"
                     + Html.fromHtml(pointOverlay.getDescription()));
 
             AlertDialog.Builder builder = new AlertDialog.Builder(MapsforgeActivity.this)
@@ -206,14 +218,15 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
         }
     };
 
-    private static Polyline createPolyline(List<GeoPoint> geoPoints) {
-        PolygonalChain polygonalChain = new PolygonalChain(geoPoints);
-        Paint paintStroke = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paintStroke.setStyle(Paint.Style.STROKE);
+    private static Polyline createPolyline(List<LatLong> geoPoints) {
+        Paint paintStroke = AndroidGraphicFactory.INSTANCE.createPaint();
+        AndroidGraphicFactory.INSTANCE.getPaint(paintStroke).setAntiAlias(true);
+        paintStroke.setStyle(Style.STROKE);
         paintStroke.setColor(Color.MAGENTA);
         paintStroke.setStrokeWidth(4);
-
-        return new Polyline(polygonalChain, paintStroke);
+        Polyline pl = new Polyline(paintStroke, AndroidGraphicFactory.INSTANCE);
+        pl.addPoints(geoPoints);
+        return pl;
     }
 
     private void configureMapView() {
@@ -222,18 +235,21 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
         this.mapView.setFocusable(true);
 
         MapScaleBar mapScaleBar = this.mapView.getMapScaleBar();
-        mapScaleBar.setText(TextField.KILOMETER, getString(R.string.unit_symbol_kilometer));
-        mapScaleBar.setText(TextField.METER, getString(R.string.unit_symbol_meter));
+        mapScaleBar.setDistanceUnitAdapter(MetricUnitAdapter.INSTANCE);
     }
 
-    private Circle createCircle(GeoPoint geoPoint) {
-        Paint paintFill = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paintFill.setStyle(Paint.Style.FILL);
+    private Circle createCircle(LatLong geoPoint) {
+        Paint paintFill = AndroidGraphicFactory.INSTANCE.createPaint();
+        AndroidGraphicFactory.INSTANCE.getPaint(paintFill).setAntiAlias(true);
+        //Paint paintFill = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paintFill.setStyle(Style.FILL);
         paintFill.setColor(Color.BLUE);
         // paintFill.setAlpha(64);
 
-        Paint paintStroke = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paintStroke.setStyle(Paint.Style.STROKE);
+        Paint paintStroke = AndroidGraphicFactory.INSTANCE.createPaint();
+        AndroidGraphicFactory.INSTANCE.getPaint(paintStroke).setAntiAlias(true);
+        //Paint paintStroke = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paintStroke.setStyle(Style.STROKE);
         paintStroke.setColor(Color.DKGRAY);
         // paintStroke.setAlpha(128);
         paintStroke.setStrokeWidth(3);
@@ -275,8 +291,8 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
                 return;
             }
 
-            this.mapView.getOverlays().add(this.navigationOverlay);
-            this.mapView.getOverlays().add(this.myLocationOverlay);
+            this.mapView.getLayerManager().getLayers().add(this.myLocationOverlay);
+            this.mapView.getLayerManager().getLayers().add(this.myLocationOverlay);
             this.snapToLocationView.setVisibility(View.VISIBLE);
         }
     }
@@ -313,8 +329,8 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
 
         // check if a location has been found
         if (bestLocation != null) {
-            GeoPoint geoPoint = new GeoPoint(bestLocation.getLatitude(), bestLocation.getLongitude());
-            this.mapView.getMapViewPosition().setCenter(geoPoint);
+            LatLong geoPoint = new LatLong(bestLocation.getLatitude(), bestLocation.getLongitude());
+            this.mapView.setCenter(geoPoint);
         } else {
             showToastOnUiThread(getString(R.string.error_last_location_unknown));
         }
@@ -351,7 +367,7 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -359,7 +375,7 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
         this.screenshotCapturer.start();
 
         setContentView(R.layout.activity_mapsforge);
-        this.mapView = (MyMapView) findViewById(R.id.mapView);
+        this.mapView = findViewById(R.id.mapView);
         configureMapView();
 
         this.snapToLocationView = (ToggleButton) findViewById(R.id.snapToLocationView);
@@ -371,7 +387,7 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
         });
 
         Drawable drawable = getResources().getDrawable(R.drawable.my_location_chevron);
-        drawable = Marker.boundCenter(drawable);
+        //drawable = Marker.boundCenter(drawable); //TODO mapsforge-upgrade
         this.myLocationOverlay =
                 new SensorMyLocationOverlay(this, this.mapView, new RotationMarker(null, drawable));
         this.navigationOverlay = new NavigationOverlay(this.myLocationOverlay);
@@ -387,10 +403,10 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
             this.showPins = sharedPreferences.getBoolean(BUNDLE_SHOW_PINS, true);
             this.showLabels = sharedPreferences.getBoolean(BUNDLE_SHOW_LABELS, true);
         }
-        mapView.getOverlays().add(listOverlay);
+        mapView.getLayerManager().getLayers().add(listOverlay);
 
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        this.wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "AMV");
+        this.wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "AMV:");
 
         if (savedInstanceState != null) {
             if (savedInstanceState.getBoolean(BUNDLE_SHOW_MY_LOCATION, true)) {
@@ -487,11 +503,11 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
                             double longitude_m = Double.parseDouble(((EditText) view.findViewById(R.id.longitude_m)).getText().toString());
                             double longitude_s = Double.parseDouble(((EditText) view.findViewById(R.id.longitude_s)).getText().toString());
                             double longitude = longitude_d + longitude_m / 60 + longitude_s / 3600;
-                            GeoPoint geoPoint = new GeoPoint(latitude, longitude);
+                            LatLong geoPoint = new LatLong(latitude, longitude);
                             SeekBar zoomLevelView = (SeekBar) view.findViewById(R.id.zoomLevel);
                             MapPosition newMapPosition =
                                     new MapPosition(geoPoint, (byte) zoomLevelView.getProgress());
-                            MapsforgeActivity.this.mapView.getMapViewPosition().setMapPosition(newMapPosition);
+                            MapsforgeActivity.this.mapView.getPo.setMapPosition(newMapPosition);
                         }
                     });
                 }
@@ -512,7 +528,7 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
                             double longitude_m = Double.parseDouble(((EditText) view.findViewById(R.id.longitude_m)).getText().toString());
                             double longitude = longitude_d + longitude_m / 60;
                             try {
-                                GeoPoint geoPoint = new GeoPoint(latitude, longitude);
+                                LatLong geoPoint = new LatLong(latitude, longitude);
                                 SeekBar zoomLevelView = (SeekBar) view.findViewById(R.id.zoomLevel);
                                 MapPosition newMapPosition =
                                         new MapPosition(geoPoint, (byte) zoomLevelView.getProgress());
@@ -534,7 +550,7 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
                             // set the map center and zoom level
                             double latitude = Double.parseDouble(((EditText) view.findViewById(R.id.latitude)).getText().toString());
                             double longitude = Double.parseDouble(((EditText) view.findViewById(R.id.longitude)).getText().toString());
-                            GeoPoint geoPoint = new GeoPoint(latitude, longitude);
+                            LatLong geoPoint = new LatLong(latitude, longitude);
                             SeekBar zoomLevelView = (SeekBar) view.findViewById(R.id.zoomLevel);
                             MapPosition newMapPosition =
                                     new MapPosition(geoPoint, (byte) zoomLevelView.getProgress());
@@ -657,7 +673,7 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
                 return true;
 
             case R.id.menu_position_target:
-                GeoPoint geoPoint = navigationOverlay.getTarget();
+                LatLong geoPoint = navigationOverlay.getTarget();
                 if (geoPoint != null)
                     this.mapView.getMapViewPosition().setCenter(geoPoint);
                 return true;
@@ -736,7 +752,7 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
     protected void onPrepareDialog(int id, final Dialog dialog) {
         if (id == DIALOG_ENTER_COORDINATES) {
             MapViewPosition mapViewPosition = this.mapView.getMapViewPosition();
-            GeoPoint mapCenter = mapViewPosition.getCenter();
+            LatLong mapCenter = mapViewPosition.getCenter();
             double latitude = mapCenter.latitude;
             double longitude = mapCenter.longitude;
             switch (Preferences.FORMAT_COO_LATLON) {
@@ -819,7 +835,7 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
 
             // map file start position
             textView = (TextView) dialog.findViewById(R.id.infoMapFileViewStartPosition);
-            GeoPoint startPosition = mapFileInfo.startPosition;
+            LatLong startPosition = mapFileInfo.startPosition;
             if (startPosition == null) {
                 textView.setText(null);
             } else {
@@ -837,7 +853,7 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
 
             // map file language preference
             textView = (TextView) dialog.findViewById(R.id.infoMapFileViewLanguagePreference);
-            textView.setText(mapFileInfo.languagePreference);
+            textView.setText(mapFileInfo.languagesPreference);
 
             // map file comment text
             textView = (TextView) dialog.findViewById(R.id.infoMapFileViewComment);
@@ -894,18 +910,19 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         MapScaleBar mapScaleBar = this.mapView.getMapScaleBar();
-        mapScaleBar.setShowMapScaleBar(sharedPreferences.getBoolean("showScaleBar", false));
+        mapScaleBar.setVisible(sharedPreferences.getBoolean("showScaleBar", false));
         String scaleBarUnitDefault = getString(R.string.preferences_scale_bar_unit_default);
         String scaleBarUnit = sharedPreferences.getString("scaleBarUnit", scaleBarUnitDefault);
-        mapScaleBar.setImperialUnits(scaleBarUnit.equals("imperial"));
+        mapScaleBar.setDistanceUnitAdapter(ImperialUnitAdapter.INSTANCE));
 
-        try {
-            String textScaleDefault = getString(R.string.preferences_text_scale_default);
-            this.mapView.setTextScale(Float.parseFloat(sharedPreferences.getString("textScale",
-                    textScaleDefault)));
-        } catch (NumberFormatException e) {
-            this.mapView.setTextScale(getResources().getDisplayMetrics().density);
-        }
+// TODO mapsforge-upgrade
+//        try {
+//            String textScaleDefault = getString(R.string.preferences_text_scale_default);
+//            this.mapView.setTextScale(Float.parseFloat(sharedPreferences.getString("textScale",
+//                    textScaleDefault)));
+//        } catch (NumberFormatException e) {
+//            this.mapView.setTextScale(getResources().getDisplayMetrics().density);
+//        }
 
         if (sharedPreferences.getBoolean("fullscreen", false)) {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -1015,11 +1032,11 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
             showMapPack(VectorMapDataProvider.getInstance().getItems());
         }
         if (center && itemsLatitude != 0 && itemsLongitude != 0) {
-            GeoPoint geoPoint;
+            LatLong geoPoint;
             if (navigate && this.navigationOverlay.getTarget() != null)
                 geoPoint = this.navigationOverlay.getTarget();
             else
-                geoPoint = new GeoPoint(itemsLatitude, itemsLongitude);
+                geoPoint = new LatLong(itemsLatitude, itemsLongitude);
             MapPosition newMapPosition =
                     new MapPosition(geoPoint, mapView.getMapViewPosition().getZoomLevel());
             mapView.getMapViewPosition().setMapPosition(newMapPosition);
@@ -1047,15 +1064,15 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
             itemsLatitude = itemsLongitude = 0;
             int count = 0;
             listOverlay.clear();
-            List<OverlayItem> overlayItems = listOverlay.getOverlayItems();
-            List<OverlayItem> overlayLines = new ArrayList<>();
-            List<OverlayItem> overlayPoints = new ArrayList<>();
+            List<Layer> overlayItems = listOverlay.layers;
+            List<Layer> overlayLines = new ArrayList<>();
+            List<Layer> overlayPoints = new ArrayList<>();
             // overlayItems.clear();
             for (MapPointPack pack : packs) {
                 if (pack.isPolygon()) {
-                    List<GeoPoint> geoPoints = new ArrayList<>();
+                    List<LatLong> geoPoints = new ArrayList<>();
                     for (MapPoint mp : pack.getPoints()) {
-                        GeoPoint geoPoint = new GeoPoint(mp.getLatitude(), mp.getLongitude());
+                        LatLong geoPoint = new LatLong(mp.getLatitude(), mp.getLongitude());
                         geoPoints.add(geoPoint);
                     }
                     overlayLines.add(createPolyline(geoPoints));
@@ -1078,9 +1095,10 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
                         }
                         icon = new BitmapDrawable(getResources(), b);
                     }
-                    icon = Marker.boundCenterBottom(icon);
+                    //TODO mapsforge-upgrade
+                    //icon = Marker.boundCenterBottom(icon);
                     for (MapPoint mp : pack.getPoints()) {
-                        GeoPoint geoPoint = new GeoPoint(mp.getLatitude(), mp.getLongitude());
+                        LatLong geoPoint = new LatLong(mp.getLatitude(), mp.getLongitude());
                         PointOverlay pointOverlay = new PointOverlay(geoPoint, icon, mp);
                         pointOverlay.setMarkerVisible(showPins);
                         pointOverlay.setLabelVisible(showLabels);
@@ -1108,7 +1126,7 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
      * @param text the text message to display
      */
     void showToastOnUiThread(final String text) {
-        if (AndroidUtils.currentThreadIsUiThread()) {
+        if (AndroidUtil.currentThreadIsUiThread()) {
             Toast toast = Toast.makeText(this, text, Toast.LENGTH_SHORT);
             toast.show();
         } else {
@@ -1142,9 +1160,9 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
 
     private void visibilityChanged() {
         synchronized (lock) {
-            List<OverlayItem> overlayItems = listOverlay.getOverlayItems();
+            List<Layer> overlayItems = listOverlay.layers;
             for (int i = 0; i < overlayItems.size(); i++) {
-                OverlayItem item = overlayItems.get(i);
+                Layer item = overlayItems.get(i);
                 if (item instanceof LabelMarker) {
                     LabelMarker labelMarker = (LabelMarker) item;
                     labelMarker.setMarkerVisible(this.showPins);
@@ -1152,6 +1170,6 @@ public class MapsforgeActivity extends MapActivity implements IRefreshable {
                 }
             }
         }
-        this.mapView.getOverlayController().redrawOverlays();
+        this.mapView.getLayerManager().redrawLayers();
     }
 }
