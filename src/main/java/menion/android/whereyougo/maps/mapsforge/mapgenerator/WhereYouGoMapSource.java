@@ -17,7 +17,7 @@ package menion.android.whereyougo.maps.mapsforge.mapgenerator;
 /**
  * Enumeration of all internal MapGenerator implementations.
  */
-public enum MapGeneratorInternal {
+public enum WhereYouGoMapSource {
     /**
      * Blank map.
      */

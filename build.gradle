@@ -108,7 +108,7 @@ dependencies {
     implementation 'com.github.jfmdev:aFileDialog:v1.0.6'
 
     // Mapsforge new version
-    def mapsforgeVersion = '0.14.0'
+    def mapsforgeVersion = '0.15.0'
     implementation "org.mapsforge:mapsforge-core:$mapsforgeVersion"
     implementation "org.mapsforge:mapsforge-map:$mapsforgeVersion"
     implementation "org.mapsforge:mapsforge-map-android:$mapsforgeVersion"
@@ -120,6 +120,7 @@ dependencies {
 
     // used by mapsforge
     implementation 'com.caverock:androidsvg:1.4'
+
     // barcode scanner
     // v4.x: Minimum SDK version 24, downgradable to 14 by using zxing:core 3.3.0, uses androidx
     implementation 'com.journeyapps:zxing-android-embedded:4.1.0'
