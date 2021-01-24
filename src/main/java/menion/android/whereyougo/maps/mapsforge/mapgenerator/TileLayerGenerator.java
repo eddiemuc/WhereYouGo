@@ -17,11 +17,14 @@ package menion.android.whereyougo.maps.mapsforge.mapgenerator;
 import android.content.Context;
 import android.net.Uri;
 
+import org.mapsforge.core.model.LatLong;
 import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
 import org.mapsforge.map.layer.TileLayer;
 import org.mapsforge.map.layer.cache.TileCache;
 import org.mapsforge.map.layer.download.TileDownloadLayer;
+import org.mapsforge.map.layer.download.tilesource.AbstractTileSource;
 import org.mapsforge.map.layer.download.tilesource.OnlineTileSource;
+import org.mapsforge.map.layer.download.tilesource.OpenStreetMapMapnik;
 import org.mapsforge.map.layer.download.tilesource.TileSource;
 import org.mapsforge.map.layer.renderer.TileRendererLayer;
 import org.mapsforge.map.model.IMapViewPosition;
@@ -104,7 +107,18 @@ public final class TileLayerGenerator {
     }
 
     private static TileLayerData createOnlineSource(int maxZoom, String host, String attribution, TileCache tileCache, IMapViewPosition pos) {
-        final OnlineTileSource ts = new OnlineTileSource(new String[]{host}, -1);
+
+        final AbstractTileSource ts = OpenStreetMapMapnik.INSTANCE;
+        //final OnlineTileSource ts = new OnlineTileSource(new String[]{host}, 443);
+        //ts.setZoomLevelMax((byte)maxZoom);
+
+        pos.setZoomLevel((byte)10);
+        pos.setCenter(new LatLong(48,11));
+        return new TileLayerData(new TileDownloadLayer(tileCache, pos, ts, AndroidGraphicFactory.INSTANCE), ts.getZoomLevelMin(), ts.getZoomLevelMax(), "", null);
+    }
+
+    private static TileLayerData createOnlineSourcexx(int maxZoom, String host, String attribution, TileCache tileCache, IMapViewPosition pos) {
+        final OnlineTileSource ts = new OnlineTileSource(new String[]{host}, 443);
         ts.setZoomLevelMax((byte)maxZoom);
 
         return new TileLayerData(new TileDownloadLayer(tileCache, pos, ts, AndroidGraphicFactory.INSTANCE), ts.getZoomLevelMin(), ts.getZoomLevelMax(), attribution, null);

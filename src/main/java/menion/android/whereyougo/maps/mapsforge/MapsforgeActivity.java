@@ -17,8 +17,6 @@ package menion.android.whereyougo.maps.mapsforge;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.ActivityNotFoundException;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -59,26 +57,19 @@ import org.mapsforge.core.graphics.Paint;
 import org.mapsforge.core.graphics.Style;
 import org.mapsforge.map.android.graphics.AndroidGraphicFactory;
 import org.mapsforge.map.layer.Layer;
-import org.mapsforge.map.layer.Layers;
-import org.mapsforge.map.layer.TileLayer;
 import org.mapsforge.map.layer.cache.TileCache;
 import org.mapsforge.map.layer.overlay.Circle;
 import org.mapsforge.core.model.BoundingBox;
 import org.mapsforge.core.model.LatLong;
-import org.mapsforge.core.model.MapPosition;
 import org.mapsforge.map.android.view.MapView;
 import org.mapsforge.map.layer.overlay.Polyline;
 import org.mapsforge.map.model.IMapViewPosition;
-import org.mapsforge.map.model.MapViewPosition;
 import org.mapsforge.map.reader.header.MapFileInfo;
-import org.mapsforge.map.rendertheme.InternalRenderTheme;
 import org.mapsforge.map.scalebar.ImperialUnitAdapter;
 import org.mapsforge.map.scalebar.MapScaleBar;
 import org.mapsforge.map.scalebar.MetricUnitAdapter;
 
-import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -93,7 +84,6 @@ import menion.android.whereyougo.gui.extension.activity.CustomActivity;
 import menion.android.whereyougo.maps.container.MapPoint;
 import menion.android.whereyougo.maps.container.MapPointPack;
 import menion.android.whereyougo.maps.mapsforge.filefilter.FilterByFileExtension;
-import menion.android.whereyougo.maps.mapsforge.filefilter.ValidMapFile;
 import menion.android.whereyougo.maps.mapsforge.filefilter.ValidRenderTheme;
 import menion.android.whereyougo.maps.mapsforge.filepicker.FilePicker;
 import menion.android.whereyougo.maps.mapsforge.mapgenerator.TileLayerGenerator;
@@ -231,8 +221,14 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
         this.mapView.setClickable(true);
         this.mapView.setFocusable(true);
 
+
+
         MapScaleBar mapScaleBar = this.mapView.getMapScaleBar();
         mapScaleBar.setDistanceUnitAdapter(MetricUnitAdapter.INSTANCE);
+
+        mapView.getMapScaleBar().setVisible(true);
+        mapView.setBuiltInZoomControls(true);
+
     }
 
     private Circle createCircle(LatLong geoPoint) {
@@ -288,8 +284,9 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
                 return;
             }
 
-            this.mapView.getLayerManager().getLayers().add(this.myLocationOverlay);
-            this.mapView.getLayerManager().getLayers().add(this.myLocationOverlay);
+            //TODO mapsforge-upgrade: remove for now
+            //this.mapView.getLayerManager().getLayers().add(this.myLocationOverlay);
+            //this.mapView.getLayerManager().getLayers().add(this.navigationOverlay);
             this.snapToLocationView.setVisibility(View.VISIBLE);
         }
     }
@@ -346,20 +343,23 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
         if (requestCode == SELECT_MAP_FILE) {
             if (resultCode == RESULT_OK) {
                 disableSnapToLocation(true);
-                if (intent != null && intent.getStringExtra(FilePicker.SELECTED_FILE) != null) {
-                    this.mapView.setMapFile(new File(intent.getStringExtra(FilePicker.SELECTED_FILE)));
-                    setMapGenerator(WhereYouGoMapSource.DATABASE_RENDERER);
+                if (intent != null && intent.getData() != null) {
+                    switchMapSource(WhereYouGoMapSource.DATABASE_RENDERER, intent.getData());
+//                    this.mapView.setMapFile(new File(intent.getStringExtra(FilePicker.SELECTED_FILE)));
+//                    setMapGenerator(WhereYouGoMapSource.DATABASE_RENDERER);
                 }
-            } else if (resultCode == RESULT_CANCELED && this.mapView.getMapFile() == null) {
-                // finish();
             }
+//            else if (resultCode == RESULT_CANCELED && this.mapView.getMapFile() == null) {
+//                // finish();
+//            }
         } else if (requestCode == SELECT_RENDER_THEME_FILE && resultCode == RESULT_OK && intent != null
                 && intent.getStringExtra(FilePicker.SELECTED_FILE) != null) {
-            try {
-                this.mapView.setRenderTheme(new File(intent.getStringExtra(FilePicker.SELECTED_FILE)));
-            } catch (FileNotFoundException e) {
-                showToastOnUiThread(e.getLocalizedMessage());
-            }
+            //TODO: mapsforge-upgrade rendertheme
+//            try {
+//                this.mapView.setRenderTheme(new File(intent.getStringExtra(FilePicker.SELECTED_FILE)));
+//            } catch (FileNotFoundException e) {
+//                showToastOnUiThread(e.getLocalizedMessage());
+//            }
         }
     }
 
@@ -404,7 +404,8 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
             this.showPins = sharedPreferences.getBoolean(BUNDLE_SHOW_PINS, true);
             this.showLabels = sharedPreferences.getBoolean(BUNDLE_SHOW_LABELS, true);
         }
-        mapView.getLayerManager().getLayers().add(listOverlay);
+        //TODO mapsforge-upgrade: remove for now
+        //mapView.getLayerManager().getLayers().add(listOverlay);
 
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         this.wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "AMV:");
@@ -450,9 +451,10 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
         try {
             WhereYouGoMapSource type =
                     WhereYouGoMapSource.valueOf(sharedPreferences.getString(KEY_MAP_GENERATOR, getString(R.string.mapgenerator_default)));
-            setMapGenerator(type);
+            switchMapSource(type, null); //TODO mapsforge-upgrade
         } catch (Exception e) {
-            setMapGenerator(WhereYouGoMapSource.valueOf(getString(R.string.mapgenerator_default)));
+            switchMapSource(WhereYouGoMapSource.valueOf(getString(R.string.mapgenerator_default)), null); //TODO mapsforge-upgrade
+            // setMapGenerator(WhereYouGoMapSource.valueOf(getString(R.string.mapgenerator_default)));
         }
 
         // check if offline map file is set
@@ -460,22 +462,23 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
 
         // add items received via Intent or from provider
         refreshItems();
+        invalidateOptionsMenu();
     }
 
     private void checkOfflineMapFile(final boolean forceAndFeedback) {
         // if no local mapFile is set: query c:geo for current mapFile
-        if (forceAndFeedback || this.mapView.getMapFile() == null) {
-            try {
-                final Intent intent = new Intent(Intent.ACTION_SENDTO);
-                intent.setComponent(new ComponentName(getString(R.string.cgeo_package), getString(R.string.cgeo_action_queryMapFile)));
-                intent.putExtra(getString(R.string.cgeo_queryMapFile_actionParam), forceAndFeedback);
-                startActivity(intent);
-            } catch (ActivityNotFoundException e) {
-                if (forceAndFeedback) {
-                    Toast.makeText(this, R.string.receivemapfile_cgeonotfound, Toast.LENGTH_SHORT).show();
-                }
-            }
-        }
+//        if (forceAndFeedback || this.mapView.getMapFile() == null) {
+//            try {
+//                final Intent intent = new Intent(Intent.ACTION_SENDTO);
+//                intent.setComponent(new ComponentName(getString(R.string.cgeo_package), getString(R.string.cgeo_action_queryMapFile)));
+//                intent.putExtra(getString(R.string.cgeo_queryMapFile_actionParam), forceAndFeedback);
+//                startActivity(intent);
+//            } catch (ActivityNotFoundException e) {
+//                if (forceAndFeedback) {
+//                    Toast.makeText(this, R.string.receivemapfile_cgeonotfound, Toast.LENGTH_SHORT).show();
+//                }
+//            }
+//        }
     }
 
     @Deprecated
@@ -506,9 +509,10 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
                             double longitude = longitude_d + longitude_m / 60 + longitude_s / 3600;
                             LatLong geoPoint = new LatLong(latitude, longitude);
                             SeekBar zoomLevelView = (SeekBar) view.findViewById(R.id.zoomLevel);
-                            MapPosition newMapPosition =
-                                    new MapPosition(geoPoint, (byte) zoomLevelView.getProgress());
-                            MapsforgeActivity.this.mapView.getPo.setMapPosition(newMapPosition);
+//                            MapPosition newMapPosition =
+//                                    new MapPosition(geoPoint, (byte) zoomLevelView.getProgress());
+                            MapsforgeActivity.this.mapView.getModel().mapViewPosition.setCenter(geoPoint);
+                            MapsforgeActivity.this.mapView.getModel().mapViewPosition.setZoomLevel((byte) zoomLevelView.getProgress());
                         }
                     });
                 }
@@ -531,9 +535,10 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
                             try {
                                 LatLong geoPoint = new LatLong(latitude, longitude);
                                 SeekBar zoomLevelView = (SeekBar) view.findViewById(R.id.zoomLevel);
-                                MapPosition newMapPosition =
-                                        new MapPosition(geoPoint, (byte) zoomLevelView.getProgress());
-                                MapsforgeActivity.this.mapView.getMapViewPosition().setMapPosition(newMapPosition);
+//                            MapPosition newMapPosition =
+//                                    new MapPosition(geoPoint, (byte) zoomLevelView.getProgress());
+                                MapsforgeActivity.this.mapView.getModel().mapViewPosition.setCenter(geoPoint);
+                                MapsforgeActivity.this.mapView.getModel().mapViewPosition.setZoomLevel((byte) zoomLevelView.getProgress());
                             } catch (IllegalArgumentException e) {
                             }
                         }
@@ -553,9 +558,10 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
                             double longitude = Double.parseDouble(((EditText) view.findViewById(R.id.longitude)).getText().toString());
                             LatLong geoPoint = new LatLong(latitude, longitude);
                             SeekBar zoomLevelView = (SeekBar) view.findViewById(R.id.zoomLevel);
-                            MapPosition newMapPosition =
-                                    new MapPosition(geoPoint, (byte) zoomLevelView.getProgress());
-                            MapsforgeActivity.this.mapView.getMapViewPosition().setMapPosition(newMapPosition);
+//                            MapPosition newMapPosition =
+//                                    new MapPosition(geoPoint, (byte) zoomLevelView.getProgress());
+                            MapsforgeActivity.this.mapView.getModel().mapViewPosition.setCenter(geoPoint);
+                            MapsforgeActivity.this.mapView.getModel().mapViewPosition.setZoomLevel((byte) zoomLevelView.getProgress());
                         }
                     });
                 }
@@ -598,10 +604,10 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
                 @Override
                 public boolean onMenuItemClick(MenuItem item) {
                     if (generator == WhereYouGoMapSource.DATABASE_RENDERER
-                            && MapsforgeActivity.this.mapView.getMapFile() == null) {
+                            && MapsforgeActivity.this.mapFile == null) {
                         startMapFilePicker();
                     } else {
-                        setMapGenerator(generator);
+                        switchMapSource(generator, null);
                         item.setChecked(true);
                     }
                     return true;
@@ -616,7 +622,7 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
     }
 
     @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         super.onDestroy();
         this.screenshotCapturer.interrupt();
         Editor preferences = PreferenceManager.getDefaultSharedPreferences(this).edit();
@@ -712,7 +718,7 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
                 return true;
 
             case R.id.menu_render_theme_osmarender:
-//TODO: rendertheme!
+//TODO mapsforge-upgrade: rendertheme!
                 //this.mapView.setRenderTheme(InternalRenderTheme.OSMARENDER);
                 return true;
 
@@ -939,7 +945,7 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
             this.wakeLock.acquire();
         }
 
-        //TODO tileCache settings still needed???
+        //TODO mapsforge-upgrade: tileCache settings still needed???
 //        boolean persistent = sharedPreferences.getBoolean("tileCachePersistence", true);
 //        int capacity =
 //                Math.min(sharedPreferences.getInt("tileCacheSize", FILE_SYSTEM_CACHE_SIZE_DEFAULT),
@@ -948,7 +954,7 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
 //        fileSystemTileCache.setPersistent(persistent);
 //        fileSystemTileCache.setCapacity(capacity);
 
-        // TODO: map movement settings still needed?
+        // TODO mapsforge-upgrade: map movement settings still needed?
 //        float moveSpeedFactor =
 //                Math.min(sharedPreferences.getInt("moveSpeed", MOVE_SPEED_DEFAULT), MOVE_SPEED_MAX) / 10f;
 //        this.mapView.getMapMover().setMoveSpeedFactor(moveSpeedFactor);
@@ -956,7 +962,7 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
         this.mapView.getFpsCounter().setVisible(
                 sharedPreferences.getBoolean("showFpsCounter", false));
 
-        //TODO: DebugSettings still needed?
+        //TODO mapsforge-upgrade: DebugSettings still needed?
 //        boolean drawTileFrames = sharedPreferences.getBoolean("drawTileFrames", false);
 //        boolean drawTileCoordinates = sharedPreferences.getBoolean("drawTileCoordinates", false);
 //        boolean highlightWaterTiles = sharedPreferences.getBoolean("highlightWaterTiles", false);
@@ -1098,7 +1104,8 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
                 mapView.getModel().mapViewPosition.setZoomLevel(newTileLayerData.maxZoom);
             }
 
-            this.mapView.getLayerManager().getLayers().add(newTileLayerData.tileLayer);
+            this.mapView.getLayerManager().getLayers().add(0, newTileLayerData.tileLayer);
+            //this.mapView.getLayerManager().redrawLayers();
 
             //attribution
             TextView attributionView = (TextView) findViewById(R.id.attribution);
@@ -1192,9 +1199,17 @@ public class MapsforgeActivity extends CustomActivity implements IRefreshable {
      * Sets all file filters and starts the FilePicker to select a map file.
      */
     private void startMapFilePicker() {
-        FilePicker.setFileDisplayFilter(FILE_FILTER_EXTENSION_MAP);
-        FilePicker.setFileSelectFilter(new ValidMapFile());
-        startActivityForResult(new Intent(this, FilePicker.class), SELECT_MAP_FILE);
+        final Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+
+        startActivityForResult(intent, SELECT_MAP_FILE);
+
+//        FilePicker.setFileDisplayFilter(FILE_FILTER_EXTENSION_MAP);
+//        FilePicker.setFileSelectFilter(new ValidMapFile());
+//        startActivityForResult(new Intent(this, FilePicker.class), SELECT_MAP_FILE);
     }
 
     /**

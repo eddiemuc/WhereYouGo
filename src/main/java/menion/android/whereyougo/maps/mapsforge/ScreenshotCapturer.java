@@ -59,20 +59,21 @@ class ScreenshotCapturer extends PausableThread {
             }
 
             File outputFile = assembleFilePath(directory);
-            if (this.advancedMapViewer.mapView.takeScreenshot(this.compressFormat, SCREENSHOT_QUALITY,
-                    outputFile)) {
-                this.advancedMapViewer.showToastOnUiThread(outputFile.getAbsolutePath());
-            } else {
+            //TODO mapsforge-upgrade
+//            if (this.advancedMapViewer.mapView.takeScreenshot(this.compressFormat, SCREENSHOT_QUALITY,
+//                    outputFile)) {
+//                this.advancedMapViewer.showToastOnUiThread(outputFile.getAbsolutePath());
+//            } else {
                 this.advancedMapViewer.showToastOnUiThread("Screenshot could not be saved");
-            }
-        } catch (IOException e) {
+//            }
+        } catch (Exception e) {
             this.advancedMapViewer.showToastOnUiThread(e.getMessage());
         }
 
         this.compressFormat = null;
     }
 
-    @Override
+    //@Override
     protected String getThreadName() {
         return THREAD_NAME;
     }

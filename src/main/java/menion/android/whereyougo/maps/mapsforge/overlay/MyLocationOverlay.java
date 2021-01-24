@@ -132,8 +132,9 @@ public class MyLocationOverlay extends Layer implements LocationListener {
                 MercatorProjection.longitudeToPixelX(boundingBox.minLongitude, zoomLevel);
         double canvasPixelTop = MercatorProjection.latitudeToPixelY(boundingBox.maxLatitude, zoomLevel);
         Point canvasPosition = new Point(canvasPixelLeft, canvasPixelTop);
-        this.circle.draw(boundingBox, zoomLevel, canvas, canvasPosition);
-        this.marker.draw(boundingBox, zoomLevel, canvas, canvasPosition);
+        //TODO mapsforge-upgrade: folllwing leads to NPE
+        //this.circle.draw(boundingBox, zoomLevel, canvas, canvasPosition);
+        //this.marker.draw(boundingBox, zoomLevel, canvas, canvasPosition);
     }
 
     private synchronized boolean enableBestAvailableProvider() {
